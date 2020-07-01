@@ -100,7 +100,7 @@ if __name__ == "__main__":
     count = 0
     fid = 0
 
-    arg_parser = ArgumentParser(description="GATT Read Firmware Version Demo")
+    arg_parser = ArgumentParser(description="GATT Read Characteristic")
     arg_parser.add_argument('mac_address', help="MAC address of device to connect")
     arg_parser.add_argument('cmd', help="CMD data for uart_rx_characteristic")
     arg_parser.add_argument('path', help="File path for recieve data")
