@@ -4,11 +4,6 @@ import sys
 
 from argparse import ArgumentParser
 
-buffflag = False
-bufflen = 0
-count = 0
-fid = 0
-
 class AnyDevice(gatt.Device):
 
     def connect_succeeded(self):
@@ -32,11 +27,11 @@ class AnyDevice(gatt.Device):
     def services_resolved(self):
         super().services_resolved()
 
-        # print("[%s] Resolved services" % (self.mac_address))
-        # for service in self.services:
-        #     print("[%s]  Service [%s]" % (self.mac_address, service.uuid))
-        #     for characteristic in service.characteristics:
-        #         print("[%s]    Characteristic [%s]" % (self.mac_address, characteristic.uuid))
+        print("[%s] Resolved services" % (self.mac_address))
+        for service in self.services:
+            print("[%s]  Service [%s]" % (self.mac_address, service.uuid))
+            for characteristic in service.characteristics:
+                print("[%s]    Characteristic [%s]" % (self.mac_address, characteristic.uuid))
 
         device_information_service = next(
             s for s in self.services
@@ -65,7 +60,9 @@ class AnyDevice(gatt.Device):
         fid = open(args.path,'w')
         fid.write("characteristic_write_value_failed")
         fid.close()
-        sys.exit("characteristic_write_value_failed") 
+        # sys.exit("characteristic_write_value_failed") 
+        device.disconnect()
+        manager.stop()
 
     def characteristic_value_updated(self, characteristic, value):
         if characteristic.uuid == '6e400003-b5a3-f393-e0a9-e50e24dcca9e' :
@@ -90,23 +87,34 @@ class AnyDevice(gatt.Device):
             if count > bufflen+9:
                 buffflag = False
                 fid.close()
+                device.disconnect()
                 manager.stop()
             
-
     def characteristic_enable_notifications_succeeded(self, characteristic):
         print("characteristic_enable_notifications_succeeded")
 
     
-arg_parser = ArgumentParser(description="GATT Read Firmware Version Demo")
-arg_parser.add_argument('mac_address', help="MAC address of device to connect")
-arg_parser.add_argument('cmd', help="CMD data for uart_rx_characteristic")
-arg_parser.add_argument('path', help="File path for recieve data")
-args = arg_parser.parse_args()
+if __name__ == "__main__":
+    buffflag = False
+    bufflen = 0
+    count = 0
+    fid = 0
 
-manager = gatt.DeviceManager(adapter_name='hci0')
+    arg_parser = ArgumentParser(description="GATT Read Firmware Version Demo")
+    arg_parser.add_argument('mac_address', help="MAC address of device to connect")
+    arg_parser.add_argument('cmd', help="CMD data for uart_rx_characteristic")
+    arg_parser.add_argument('path', help="File path for recieve data")
+    args = arg_parser.parse_args()
 
-device = AnyDevice(manager=manager, mac_address=args.mac_address)
-device.connect()
+    if len(args.mac_address) != 17:
+        sys.exit("mac address error") 
 
+    if len(args.cmd)%2 != 0:
+        sys.exit("cmd error") 
 
-manager.run()
+    manager = gatt.DeviceManager(adapter_name='hci0')
+
+    device = AnyDevice(manager=manager, mac_address=args.mac_address)
+    device.connect()
+
+    manager.run()
